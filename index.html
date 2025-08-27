@@ -1,0 +1,449 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Calculadora de Tratamientos</title>
+  <style>
+    :root{--gap:14px}
+    *{box-sizing:border-box}
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;line-height:1.35;margin:0;background:#fafafa;color:#111}
+    .wrap{max-width:980px;margin:0 auto;padding:24px}
+    h1{font-size:clamp(24px,4vw,40px);text-align:center;margin:16px 0 10px}
+    .grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--gap)}
+    .grid-1{display:grid;grid-template-columns:1fr;gap:var(--gap)}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+    label{display:block;font-weight:600;margin-bottom:6px}
+    input[type=text], input[type=number], select{width:100%;padding:10px;border:1px solid #d1d5db;border-radius:8px;background:#fff}
+    input[disabled], select[disabled]{background:#f3f4f6;color:#6b7280}
+    .row{display:flex;gap:var(--gap);align-items:center}
+    .row>*{flex:1}
+    .btn{appearance:none;border:1px solid #111;background:#111;color:#fff;padding:10px 14px;border-radius:10px;cursor:pointer;font-weight:600}
+    .btn:disabled{opacity:.5;cursor:not-allowed}
+    .btn.alt{background:#fff;color:#111}
+    .ok{color:#065f46}
+    .bad{color:#991b1b}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace}
+    .resumen{background:#fff;border:1px dashed #c7d2fe}
+    .muted{color:#6b7280}
+    .pill{display:inline-block;border:1px solid #d1d5db;border-radius:999px;padding:2px 8px;font-size:12px;background:#fff}
+    .small{font-size:12px}
+    .danger{color:#b91c1c;font-weight:700}
+    #resultado{white-space:normal}
+    .summary-title{font-size:34px;margin:0 0 8px}
+    ul.clean{list-style:none;padding-left:0;margin:6px 0}
+    ul.clean li{margin:2px 0}
+    .alert{color:#b91c1c;font-weight:700;margin-top:12px}
+
+    .cabecera{ text-align:center; margin:8px 0 16px }
+    .cabecera h1{ font-size:clamp(32px,6vw,56px); margin:10px 0 12px; font-weight:800 }
+    .credenciales{ font-size:18px; line-height:1.25; color:#111 }
+    .credenciales > div{ margin:4px 0 }
+    .logos{ display:flex; justify-content:center; align-items:center; gap:24px; flex-wrap:wrap; margin:16px 0 8px; }
+    .logos img{ height:clamp(56px, 10vw, 110px); object-fit:contain }
+    @media print{ .logos img{ height:80px } }
+
+    @media (max-width: 720px){
+      .wrap{ padding:12px; }
+      .grid{ grid-template-columns:1fr; }
+      .row{ flex-direction:column; gap:10px; }
+      .row>*{ width:100%; }
+      .logos img{ height:64px; }
+      .cabecera h1{ font-size:28px; }
+    }
+    input[type=text], input[type=number], select { font-size:16px; }
+    .btn{ min-height:44px; }
+    .resumen{ scroll-margin-top:80px; }
+  </style>
+
+  <script>
+    // Pon aquí tu URL de la app web (termina en /exec)
+    window.WEBAPP_URL = "";
+  </script>
+</head>
+<body>
+  <div class="wrap">
+    <header class="cabecera">
+      <h1>Calculadora de Tratamientos</h1>
+      <div class="credenciales">
+        <div>◈ Josué Arturo Colín Ocampo ◈</div>
+        <div>❦ Cirujano Dentista UAEMex</div>
+        <div>❦ Especialista en Ortodoncia UAEMex</div>
+        <div>❦ Ortopedia Maxilar UNAM</div>
+        <div>❦ Maestro en Ciencias Odontológicas UAEMex</div>
+      </div>
+      <div class="logos">
+        <img src="logo.png"  alt="Logo 1">
+        <img src="logo2.png" alt="Logo 2">
+        <img src="logo3.png" alt="Logo 3">
+      </div>
+    </header>
+
+    <div class="card grid">
+      <div>
+        <label for="doctor-code">Código del Doctor</label>
+        <div class="row">
+          <input id="doctor-code" class="mono" type="text" placeholder="Ingrese código del doctor" autocomplete="off"/>
+          <button id="btnValidate" class="btn" type="button">Validar Doctor</button>
+        </div>
+        <p id="drStatus" class="muted small" style="margin-top:8px">Sin validar</p>
+        <p><strong>Doctor:</strong> <span id="drName" class="pill">—</span></p>
+      </div>
+      <div>
+        <label>Fecha</label>
+        <div class="row">
+          <input id="fecha-dd" class="mono" type="number" inputmode="numeric" placeholder="DD" min="1" max="31">
+          <input id="fecha-mm" class="mono" type="number" inputmode="numeric" placeholder="MM" min="1" max="12">
+          <input id="fecha-aaaa" class="mono" type="number" inputmode="numeric" placeholder="AAAA" min="1900" max="2100">
+        </div>
+        <p class="muted small" style="margin-top:8px">Se autollenará con la fecha actual al validar el doctor.</p>
+      </div>
+    </div>
+
+    <div class="card grid">
+      <div>
+        <label for="nombre-paciente">Nombre del paciente</label>
+        <input id="nombre-paciente" type="text" placeholder="Ingrese el nombre del paciente" autocomplete="off"/>
+      </div>
+      <div>
+        <label for="edad-paciente">Edad del paciente</label>
+        <input id="edad-paciente" type="number" placeholder="Edad" min="0" max="120"/>
+      </div>
+    </div>
+
+    <div class="card grid">
+      <div>
+        <label for="tipo">Tipo de Tratamiento</label>
+        <select id="tipo" disabled>
+          <option value="ortodoncia">Ortodoncia</option>
+          <option value="ortopedia">Ortopedia</option>
+        </select>
+      </div>
+      <div>
+        <label for="opciones">Opciones de Tratamiento</label>
+        <select id="opciones" disabled></select>
+      </div>
+    </div>
+
+    <div class="card grid-1">
+      <label for="tipo-cobro-select">Tipo de cobro del inicio</label>
+      <select id="tipo-cobro-select" disabled>
+        <option value="completo">Pago inicial completo</option>
+        <option value="diferido">Pago inicial diferido (4 sesiones)</option>
+      </select>
+      <div class="muted small" style="margin-top:6px">
+        En diferido: se cobra un <span class="danger">mínimo hoy</span> según la categoría y el resto del inicio se reparte en <strong>4 sesiones</strong>; a partir de la sesión 5 se cobra solo la consulta.
+      </div>
+    </div>
+
+    <div class="card grid">
+      <div>
+        <label for="comision-inicio">Comisión por Inicio ($)</label>
+        <input id="comision-inicio" type="number" min="0" step="1" placeholder="Ej. 2000" disabled/>
+      </div>
+      <div>
+        <label for="comision-mensual">Comisión por Consulta ($)</label>
+        <input id="comision-mensual" type="number" min="0" step="1" placeholder="Ej. 200" disabled/>
+      </div>
+    </div>
+
+    <div class="card grid-1">
+      <div class="row">
+        <button id="btnCalcular" class="btn" type="button" disabled>Calcular</button>
+        <button id="btnGenerarFolio" class="btn alt" type="button" disabled>Generar Folio</button>
+      </div>
+    </div>
+
+    <div class="card grid-1 resumen">
+      <div id="resultado" class="">Aún no hay resultados.</div>
+    </div>
+
+  </div>
+
+  <script type="application/json" id="DB_V1">
+  {
+    "categorias": {
+      "BRAQ_METALICOS": "Braquets Metálicos",
+      "BRAQ_CERAMICOS": "Braquets Cerámicos",
+      "BRAQ_METALICOS_AUTO_NOVA": "Braquets Metálicos Autoligado Nova",
+      "BRAQ_METALICOS_AUTO_EMPOWER": "Braquets Metálicos Autoligado Empower",
+      "BRAQ_CERAMICOS_AUTO_EMPOWER": "Braquets Cerámicos Autoligado Empower",
+      "ORTOPEDIA": "Ortopedia"
+    },
+    "doctores": {
+      "1123": {"nombre":"Dra. Fabiola","limites":{"inicio":0,"ortodoncia":0,"ortopedia":0},
+        "costos":{"BRAQ_METALICOS":{"inicio":6200,"consulta":500},"BRAQ_CERAMICOS":{"inicio":9000,"consulta":700},"BRAQ_METALICOS_AUTO_NOVA":{"inicio":9000,"consulta":700},"BRAQ_METALICOS_AUTO_EMPOWER":{"inicio":12000,"consulta":700},"BRAQ_CERAMICOS_AUTO_EMPOWER":{"inicio":16000,"consulta":700},"ORTOPEDIA":{"inicio":4500,"consulta":500}}},
+      "1323": {"nombre":"Dra. Viridiana","limites":{"inicio":0,"ortodoncia":0,"ortopedia":0},
+        "costos":{"BRAQ_METALICOS":{"inicio":5500,"consulta":500},"BRAQ_CERAMICOS":{"inicio":9000,"consulta":700},"BRAQ_METALICOS_AUTO_NOVA":{"inicio":9000,"consulta":700},"BRAQ_METALICOS_AUTO_EMPOWER":{"inicio":12000,"consulta":700},"BRAQ_CERAMICOS_AUTO_EMPOWER":{"inicio":16000,"consulta":700},"ORTOPEDIA":{"inicio":4500,"consulta":500}}},
+      "1256": {"nombre":"Dra. Rosalba","limites":{"inicio":0,"ortodoncia":0,"ortopedia":0},
+        "costos":{"BRAQ_METALICOS":{"inicio":5500,"consulta":500},"BRAQ_CERAMICOS":{"inicio":9000,"consulta":700},"BRAQ_METALICOS_AUTO_NOVA":{"inicio":9000,"consulta":700},"BRAQ_METALICOS_AUTO_EMPOWER":{"inicio":12000,"consulta":700},"BRAQ_CERAMICOS_AUTO_EMPOWER":{"inicio":16000,"consulta":700},"ORTOPEDIA":{"inicio":4500,"consulta":500}}},
+      "9932": {"nombre":"Dra. Cristina","limites":{"inicio":0,"ortodoncia":0,"ortopedia":0},
+        "costos":{"BRAQ_METALICOS":{"inicio":6500,"consulta":600},"BRAQ_CERAMICOS":{"inicio":9000,"consulta":700},"BRAQ_METALICOS_AUTO_NOVA":{"inicio":9000,"consulta":700},"BRAQ_METALICOS_AUTO_EMPOWER":{"inicio":12000,"consulta":700},"BRAQ_CERAMICOS_AUTO_EMPOWER":{"inicio":16000,"consulta":700},"ORTOPEDIA":{"inicio":4500,"consulta":500}}},
+      "3425": {"nombre":"Dra. Abigail","limites":{"inicio":0,"ortodoncia":0,"ortopedia":0},
+        "costos":{"BRAQ_METALICOS":{"inicio":6000,"consulta":600},"BRAQ_CERAMICOS":{"inicio":9000,"consulta":700},"BRAQ_METALICOS_AUTO_NOVA":{"inicio":9000,"consulta":700},"BRAQ_METALICOS_AUTO_EMPOWER":{"inicio":12000,"consulta":700},"BRAQ_CERAMICOS_AUTO_EMPOWER":{"inicio":16000,"consulta":700},"ORTOPEDIA":{"inicio":4500,"consulta":500}}},
+      "8865": {"nombre":"Dra. Cinthia","limites":{"inicio":0,"ortodoncia":0,"ortopedia":0},
+        "costos":{"BRAQ_METALICOS":{"inicio":5500,"consulta":500},"BRAQ_CERAMICOS":{"inicio":9000,"consulta":700},"BRAQ_METALICOS_AUTO_NOVA":{"inicio":9000,"consulta":700},"BRAQ_METALICOS_AUTO_EMPOWER":{"inicio":12000,"consulta":700},"BRAQ_CERAMICOS_AUTO_EMPOWER":{"inicio":16000,"consulta":700},"ORTOPEDIA":{"inicio":4500,"consulta":500}}},
+      "1145": {"nombre":"Dra.","limites":{"inicio":0,"ortodoncia":0,"ortopedia":0},
+        "costos":{"BRAQ_METALICOS":{"inicio":6200,"consulta":600},"BRAQ_CERAMICOS":{"inicio":9000,"consulta":700},"BRAQ_METALICOS_AUTO_NOVA":{"inicio":9000,"consulta":700},"BRAQ_METALICOS_AUTO_EMPOWER":{"inicio":12000,"consulta":700},"BRAQ_CERAMICOS_AUTO_EMPOWER":{"inicio":16000,"consulta":700},"ORTOPEDIA":{"inicio":4500,"consulta":500}}},
+      "3422": {"nombre":"Dra. Luisa","limites":{"inicio":0,"ortodoncia":0,"ortopedia":0},
+        "costos":{"BRAQ_METALICOS":{"inicio":6500,"consulta":600},"BRAQ_CERAMICOS":{"inicio":9000,"consulta":700},"BRAQ_METALICOS_AUTO_NOVA":{"inicio":9000,"consulta":700},"BRAQ_METALICOS_AUTO_EMPOWER":{"inicio":12000,"consulta":700},"BRAQ_CERAMICOS_AUTO_EMPOWER":{"inicio":16000,"consulta":700},"ORTOPEDIA":{"inicio":4500,"consulta":500}}}
+    }
+  }
+  </script>
+
+  <script>
+  window.addEventListener('DOMContentLoaded', () => {
+    const DB = JSON.parse(document.getElementById('DB_V1').textContent);
+    const $ = sel => document.querySelector(sel);
+    const fmt = n => new Intl.NumberFormat('es-MX', {
+      style:'currency', currency:'MXN', minimumFractionDigits:2, maximumFractionDigits:2
+    }).format(n);
+
+    let LAST_FOLIO = null;
+
+    function hoy(){
+      const d=new Date();
+      return { dd:String(d.getDate()).padStart(2,'0'),
+               mm:String(d.getMonth()+1).padStart(2,'0'),
+               aaaa:d.getFullYear() };
+    }
+    function setFechaHoy(){
+      const f=hoy();
+      $('#fecha-dd').value=f.dd; $('#fecha-mm').value=f.mm; $('#fecha-aaaa').value=f.aaaa;
+    }
+
+    function popularOpciones(tipo){
+      const sel=$('#opciones'); sel.innerHTML='';
+      const map={
+        ortodoncia:['BRAQ_METALICOS','BRAQ_CERAMICOS','BRAQ_METALICOS_AUTO_NOVA','BRAQ_METALICOS_AUTO_EMPOWER','BRAQ_CERAMICOS_AUTO_EMPOWER'],
+        ortopedia:['ORTOPEDIA']
+      };
+      for(const clave of (map[tipo]||[])){
+        const opt=document.createElement('option');
+        opt.value=clave; opt.textContent=DB.categorias[clave];
+        sel.appendChild(opt);
+      }
+    }
+
+    function minPorCategoria(clave){
+      if (clave === 'BRAQ_METALICOS') return 4000;
+      if (clave === 'ORTOPEDIA') return 4500;
+      return 6000;
+    }
+
+    function renderResumen({ folio, drName, drCode, paciente, tratamiento, esquema, costoInicialTotal, minimoHoy, pagos14, pagoDesde5 }){
+      return `
+        <h2 class="summary-title">Resumen del Tratamiento</h2>
+        ${folio ? `<p><strong>Folio:</strong> ${folio}</p>` : ``}
+        <p>
+          <strong>Doctor:</strong> ${drName}<br>
+          <strong>Código del doctor:</strong> ${drCode}<br>
+          <strong>Nombre del paciente:</strong> ${paciente || '—'}<br>
+          <strong>Tratamiento:</strong> ${tratamiento}<br>
+          <strong>Esquema seleccionado:</strong> ${esquema}
+        </p>
+        <p><strong>Costo inicial total que deberá cubrir el paciente:</strong> ${fmt(costoInicialTotal)}</p>
+        ${ minimoHoy != null ? `<p><strong>Monto mínimo para iniciar tratamiento:</strong> <span class="danger">${fmt(minimoHoy)}</span></p>` : `` }
+        ${ (pagos14 && pagos14.length) ? `<p><strong>Pagos del paciente del Mes 1 al 4:</strong></p>
+           <ul class="clean">${pagos14.map((m,i)=>`<li>Mes ${i+1}: ${fmt(m)}</li>`).join('')}</ul>` : `` }
+        <p><strong>${ esquema.includes('Diferido') ? 'Pagos a partir del Mes 5 en adelante' : 'Mensualidades' }:</strong><br>${fmt(pagoDesde5)}</p>
+        ${ esquema.includes('Diferido') ? `<p class="alert">⚠️ En caso de elegir el pago diferido, la comisión al doctor le será entregada hasta que el paciente haya liquidado su inicio.</p>` : `` }
+      `;
+    }
+
+    function validarDoctor(){
+      const code=$('#doctor-code').value.trim();
+      const dr=DB.doctores[code];
+      if(!dr){
+        $('#drStatus').innerHTML='<span class="bad">Código inválido</span>';
+        $('#drName').textContent='—';
+        ['#tipo','#opciones','#comision-inicio','#comision-mensual','#btnCalcular','#btnGenerarFolio','#tipo-cobro-select']
+          .forEach(s=>{ const el=$(s); if(el) el.disabled=true; });
+        return;
+      }
+      $('#drStatus').innerHTML='<span class="ok">Doctor válido</span>';
+      $('#drName').textContent=dr.nombre || '—';
+      ['#tipo','#opciones','#comision-inicio','#comision-mensual','#btnCalcular','#btnGenerarFolio','#tipo-cobro-select']
+        .forEach(s=>{ const el=$(s); if(el) el.disabled=false; });
+      setFechaHoy();
+
+      $('#tipo').value='ortodoncia';
+      popularOpciones('ortodoncia');
+      const sel = $('#opciones');
+      if (sel && sel.options.length > 0) sel.selectedIndex = 0;
+
+      const cobro = $('#tipo-cobro-select'); if (cobro) cobro.value='completo';
+    }
+
+    function calcular(){
+      const code=$('#doctor-code').value.trim();
+      const dr=DB.doctores[code]; if(!dr){alert('Valida un doctor primero.'); return;}
+      const claveCat=$('#opciones').value; if(!claveCat){alert('Selecciona una opción de tratamiento.'); return;}
+      const base=(dr.costos||{})[claveCat]; if(!base){alert('No hay costos definidos para esta opción.'); return;}
+
+      const inicioBase=base.inicio||0;
+      const consultaBase=base.consulta||0;
+      const comInicio=parseFloat($('#comision-inicio').value||'0');
+      const comConsulta=parseFloat($('#comision-mensual').value||'0');
+
+      const consultaTotal = (consultaBase||0) + (comConsulta||0);
+      const inicioTotal = (inicioBase||0) + (comInicio||0);
+
+      const tipoCobro = $('#tipo-cobro-select').value || 'completo';
+      const paciente = $('#nombre-paciente').value.trim();
+      const esquema = (tipoCobro === 'diferido') ? 'Esquema 2 (Diferido)' : 'Esquema 1 (Pago completo)';
+
+      if (tipoCobro === 'completo') {
+        const html = renderResumen({
+          folio: LAST_FOLIO,
+          drName: dr.nombre, drCode: code,
+          paciente, tratamiento: DB.categorias[claveCat],
+          esquema,
+          costoInicialTotal: inicioTotal,
+          minimoHoy: null,
+          pagos14: [],
+          pagoDesde5: consultaTotal
+        });
+        $('#resultado').innerHTML = html;
+      } else {
+        const minimo = Math.min(inicioTotal, minPorCategoria(claveCat));
+        const restante = Math.max(0, inicioTotal - minimo);
+        const cuotas = 4;
+        const aporteBase = Math.floor(restante / cuotas);
+        let residuo = restante - (aporteBase * cuotas);
+        const pagos14 = [];
+        for (let i=1; i<=cuotas; i++) {
+          let aporte = aporteBase + (residuo > 0 ? 1 : 0);
+          if (residuo > 0) residuo--;
+          pagos14.push(aporte + consultaTotal);
+        }
+        const html = renderResumen({
+          folio: LAST_FOLIO,
+          drName: dr.nombre, drCode: code,
+          paciente, tratamiento: DB.categorias[claveCat],
+          esquema,
+          costoInicialTotal: inicioTotal,
+          minimoHoy: minimo,
+          pagos14,
+          pagoDesde5: consultaTotal
+        });
+        $('#resultado').innerHTML = html;
+      }
+    }
+
+    function generarYMostrarFolio(){
+      const drCode = ($('#doctor-code').value||'').trim();
+      const dr = DB.doctores[drCode];
+      if(!dr){ alert('Valida un doctor primero.'); return; }
+
+      const claveCat = $('#opciones').value;
+      if(!claveCat){ alert('Selecciona una opción de tratamiento.'); return; }
+
+      const dd   = String(($('#fecha-dd').value||'')).padStart(2,'0').slice(-2);
+      const mm   = String(($('#fecha-mm').value||'')).padStart(2,'0').slice(-2);
+      const aaaa = String($('#fecha-aaaa').value||'').padStart(4,'0');
+      const yyyymmdd = `${aaaa}${mm}${dd}`;
+      const paciente= ($('#nombre-paciente').value||'').trim();
+
+      const getInitials = (name) => {
+        if(!name) return 'NN';
+        const parts = name.trim().split(/\s+/).filter(Boolean);
+        if (parts.length >= 2) return (parts[0][0]+parts[1][0]).toUpperCase();
+        const w=parts[0]; return ((w[0]||'N')+(w[1]||'N')).toUpperCase();
+      };
+      const initials = getInitials(paciente);
+      const nameLen  = (paciente.replace(/\s+/g,'')).length || 0;
+
+      const folio = `ORTO-${yyyymmdd}-${drCode}-${initials}-${nameLen}`;
+      LAST_FOLIO = folio;
+      calcular();
+
+      const base = (dr.costos||{})[claveCat] || {inicio:0, consulta:0};
+      const tipoCobro = $('#tipo-cobro-select').value || 'completo';
+
+      const inicioBase    = base.inicio || 0;
+      const consultaBase  = base.consulta || 0;
+      const comInicio     = parseFloat($('#comision-inicio').value || '0');
+      const comConsulta   = parseFloat($('#comision-mensual').value || '0');
+      const inicioTotal   = inicioBase + comInicio;
+      const consultaTotal = consultaBase + comConsulta;
+
+      let minimo_inicio = '';
+      let pago_mes_1 = '', pago_mes_2 = '', pago_mes_3 = '', pago_mes_4 = '';
+      let pago_mensual_desde_mes5 = consultaTotal;
+
+      if ((tipoCobro || '').toLowerCase() === 'diferido') {
+        const minimoCat = minPorCategoria(claveCat);
+        const minimo = Math.min(inicioTotal, minimoCat);
+        const restante = Math.max(0, inicioTotal - minimo);
+        const cuotas = 4;
+        const baseCuota = Math.floor(restante / cuotas);
+        let residuo = restante - baseCuota * cuotas;
+        const pagos = [];
+        for (let i = 0; i < cuotas; i++) {
+          let aporte = baseCuota + (residuo > 0 ? 1 : 0);
+          if (residuo > 0) residuo--;
+          pagos.push(aporte + consultaTotal);
+        }
+        minimo_inicio = minimo;
+        [pago_mes_1, pago_mes_2, pago_mes_3, pago_mes_4] = pagos;
+      }
+
+      const payload = {
+        folio,
+        doctor_code: drCode,
+        doctor_name: dr.nombre || '',
+        categoria_clave: claveCat || '',
+        categoria_texto: (DB.categorias||{})[claveCat] || '',
+        inicio_base: inicioBase,
+        consulta_base: consultaBase,
+        comision_inicio: comInicio,
+        comision_consulta: comConsulta,
+        tipo_cobro: tipoCobro,
+        paciente: paciente,
+        fecha: `${dd}-${mm}-${aaaa}`,
+        minimo_inicio,
+        pago_mes_1, pago_mes_2, pago_mes_3, pago_mes_4,
+        pago_mensual_desde_mes5,
+        timestamp: new Date().toISOString()
+      };
+      enviarASheets(payload);
+    }
+
+    async function enviarASheets(payload){
+      const WEBAPP_URL = (typeof window !== 'undefined' && window.WEBAPP_URL) ? window.WEBAPP_URL : "";
+      if(!WEBAPP_URL){ return; }
+      try{
+        const resp = await fetch(WEBAPP_URL, {
+          method:'POST',
+          headers:{'Content-Type':'application/json'},
+          body: JSON.stringify(payload)
+        });
+        if (resp.ok) {
+          alert(`Folio ${payload.folio} generado y enviado correctamente.`);
+          return true;
+        } else {
+          console.error('Fallo HTTP:', resp.status);
+          return false;
+        }
+      }catch(err){
+        try{
+          await fetch(WEBAPP_URL, {
+            method:'POST',
+            mode:'no-cors',
+            headers:{'Content-Type':'text/plain;charset=utf-8'},
+            body: JSON.stringify(payload)
+          });
+        }catch(_){}
+        return false;
+      }
+    }
+
+    document.querySelector('#btnValidate')?.addEventListener('click', validarDoctor);
+    document.querySelector('#tipo')?.addEventListener('change', e => popularOpciones(e.target.value));
+    document.querySelector('#btnCalcular')?.addEventListener('click', calcular);
+    document.querySelector('#btnGenerarFolio')?.addEventListener('click', generarYMostrarFolio);
+  });
+  </script>
+</body>
+</html>

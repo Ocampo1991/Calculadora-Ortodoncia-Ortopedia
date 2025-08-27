@@ -395,7 +395,7 @@ window.addEventListener('DOMContentLoaded', () => {
   }
 
   async function enviarASheets(payload){
-    const WEBAPP_URL = window.WEBAPP_URL || "";
+    const WEBAPP_URL = window.WEBAPP_URL || "https://script.google.com/macros/s/AKfycbx3MKxTHO8sVMjCxeF8JQfYmB8zFTkNfIfEWyNbKEsNzi_RTnfhVjZZ_lywqb9wXAXIog/exec";
     if(!WEBAPP_URL){ console.warn('WEBAPP_URL no configurada; omitiendo envío.'); return; }
     try{
       const resp = await fetch(WEBAPP_URL, {

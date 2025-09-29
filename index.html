@@ -265,7 +265,7 @@
         ${ (pagos && pagos.length) ? `<p><strong>Pagos del paciente del Mes 1 al ${pagos.length}:</strong></p>
            <ul class="clean">${pagos.map((m,i)=>`<li>Mes ${i+1}: ${fmt(m)}</li>`).join('')}</ul>` : `` }
         <p><strong>${etiquetaMensualidades}:</strong><br>${fmt(pagoDesde5)}</p>
-        ${ esquema.includes('Diferido') ? `<p class="alert">⚠️ En caso de elegir el pago diferido, la comisión al doctor le será entregada hasta que el paciente haya liquidado su inicio.</p>` : `` }
+        ${ esquema.includes('Diferido') ? `<p class="alert">⚠️ En caso de elegir el pago diferido, la comisión al doctor le será entregada hasta que el paciente haya liquidado la TOTALIDAD del inicio.</p>` : `` }
       `;
     }
     // ================================================================================
